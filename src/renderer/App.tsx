@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import type { AppConfig, GroupedThoughts, Thought } from "../main/types";
 import { extractTagsFromContent, clampText } from "./utils/tags";
@@ -34,8 +34,27 @@ export function App() {
 function QuickCapture() {
   const [content, setContent] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "success">("idle");
+  const [tagSuggestionIndex, setTagSuggestionIndex] = useState(0);
+  const [allThoughtsForTags, setAllThoughtsForTags] = useState<Thought[]>([]);
 
   const tags = useMemo(() => extractTagsFromContent(content), [content]);
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    allThoughtsForTags.forEach((t) => t.tags.forEach((tag) => set.add(tag)));
+    return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  }, [allThoughtsForTags]);
+
+  useEffect(() => {
+    if (hasElectronApi()) void window.oneThought.listAllThoughts().then(setAllThoughtsForTags);
+  }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setSaveStatus("idle");
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   const saveAndClose = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -47,37 +66,121 @@ function QuickCapture() {
     });
     setSaveStatus("success");
     setContent("");
-    window.oneThought.closeQuickCapture?.();
+    setTimeout(() => window.oneThought.closeQuickCapture?.(), 1200);
   };
 
-  const closeWithoutSave = () => {
-    window.oneThought.closeQuickCapture?.();
+  const closeWithoutSave = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (hasElectronApi() && window.oneThought.closeQuickCapture) {
+      void window.oneThought.closeQuickCapture();
+    }
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    setSaveStatus("idle");
   };
 
   return (
     <div className="quick-capture-wrap">
       <div className="quick-capture-header">
         <h2>OneThought</h2>
-        <button type="button" className="modal-close quick-capture-close" onClick={closeWithoutSave} title="关闭">
+        <button type="button" className="modal-close quick-capture-close" onClick={(e) => closeWithoutSave(e)} title="关闭">
           ×
         </button>
       </div>
       <form onSubmit={saveAndClose}>
-        <textarea
-          className="input-area quick-capture-input"
-          autoFocus
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="输入想法，支持 #标签 与 Markdown，回车保存并关闭（Shift+Enter 换行）"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void saveAndClose();
-            }
-          }}
-        />
+        <div className="input-with-suggestions">
+          <textarea
+            className="input-area quick-capture-input"
+            autoFocus
+            value={content}
+            onChange={handleContentChange}
+            placeholder="输入想法，输入 # 显示标签列表，方向键选择、回车确认；或输入 #标签 后空格确认，回车保存并关闭（Shift+Enter 换行）"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                const hashMatch = content.match(/#([^\s#]*)$/u);
+                const prefix = hashMatch ? hashMatch[1] : "";
+                const prefixLower = prefix.toLowerCase();
+                let suggestions: string[] = prefixLower
+                  ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+                  : allTags.slice(0, 10);
+                if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
+                if (hashMatch && suggestions.length > 0 && suggestions[tagSuggestionIndex]) {
+                  e.preventDefault();
+                  const t = suggestions[tagSuggestionIndex];
+                  const before = content.replace(/#[^\s#]*$/u, "");
+                  setContent(before + "#" + t + " ");
+                  setTagSuggestionIndex(0);
+                  return;
+                }
+                e.preventDefault();
+                void saveAndClose();
+                return;
+              }
+              if (e.nativeEvent.isComposing) return;
+              const hashMatch = content.match(/#([^\s#]*)$/u);
+              const prefix = hashMatch ? hashMatch[1] : "";
+              const prefixLower = prefix.toLowerCase();
+              let suggestions: string[] = prefixLower
+                ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+                : allTags.slice(0, 10);
+              if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
+              if (suggestions.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setTagSuggestionIndex((i) => (i + 1) % suggestions.length);
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setTagSuggestionIndex((i) => (i - 1 + suggestions.length) % suggestions.length);
+                return;
+              }
+              if (e.key === " " && hashMatch && prefix) {
+                e.preventDefault();
+                const before = content.replace(/#[^\s#]*$/u, "");
+                setContent(before + "#" + prefix + " ");
+                setTagSuggestionIndex(0);
+              }
+            }}
+          />
+          {(() => {
+            const hashMatch = content.match(/#([^\s#]*)$/u);
+            const prefix = hashMatch ? hashMatch[1] : "";
+            const prefixLower = prefix.toLowerCase();
+            let suggestions: string[] = prefixLower
+              ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+              : allTags.slice(0, 10);
+            if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
+            if (!hashMatch || suggestions.length === 0) return null;
+            const idx = Math.min(tagSuggestionIndex, suggestions.length - 1);
+            return (
+              <div className="tag-suggestions" role="listbox">
+                {suggestions.map((t, i) => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="option"
+                    aria-selected={i === idx}
+                    className={`tag-suggestion-chip ${i === idx ? "selected" : ""}`}
+                    data-color={tagColorIndex(t, allTags)}
+                    onClick={() => {
+                      const before = content.replace(/#[^\s#]*$/u, "");
+                      setContent(before + "#" + t + " ");
+                      setTagSuggestionIndex(0);
+                    }}
+                  >
+                    #{t}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
         <div className="input-actions quick-capture-actions">
-          <button type="submit" className="btn-save quick-capture-save-btn" data-success={saveStatus === "success" ? "true" : undefined}>
+          <button type="submit" className={`btn-save quick-capture-save-btn ${saveStatus === "success" ? "success" : ""}`}>
             {saveStatus === "success" ? "✓ 已保存" : "保存"}
           </button>
         </div>
@@ -87,7 +190,7 @@ function QuickCapture() {
 }
 
 type Page = "home" | "archive";
-type TimeRangePreset = "7" | "30" | "custom";
+type TimeRangePreset = "all" | "7" | "30" | "custom";
 
 function MainApp() {
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -95,7 +198,7 @@ function MainApp() {
   const [archiveList, setArchiveList] = useState<Thought[]>([]);
   const [page, setPage] = useState<Page>("home");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [timePreset, setTimePreset] = useState<TimeRangePreset>("7");
+  const [timePreset, setTimePreset] = useState<TimeRangePreset>("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [newThought, setNewThought] = useState("");
@@ -122,6 +225,12 @@ function MainApp() {
 
   const timeRange = useMemo(() => {
     const now = new Date();
+    if (timePreset === "all") {
+      return {
+        from: new Date(0).toISOString(),
+        to: now.toISOString()
+      };
+    }
     if (timePreset === "7") {
       return {
         from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -150,7 +259,6 @@ function MainApp() {
     const cfg = await window.oneThought.getConfig();
     setConfig(cfg);
     setAiPrompt(cfg.aiSummaryPrompt ?? "");
-    setBackups(await window.oneThought.listBackups());
   }, []);
 
   const reload = useCallback(async () => {
@@ -160,7 +268,7 @@ function MainApp() {
     setArchiveList(all.filter((t) => t.archived));
     // 请求时用“当前时刻”作为 to，避免 timeRange 来自上次渲染导致刚保存的条目被截断
     const nowIso = new Date().toISOString();
-    const effectiveTo = timePreset === "7" || timePreset === "30" ? nowIso : timeRange.to;
+    const effectiveTo = timePreset === "all" || timePreset === "7" || timePreset === "30" ? nowIso : timeRange.to;
     const options: Parameters<typeof window.oneThought.listThoughts>[0] = {
       viewMode: "day",
       archived: false,
@@ -426,6 +534,9 @@ function MainApp() {
         <div className="time-filter">
           <h3>时间范围</h3>
           <div className="quick-range">
+            <button type="button" className={timePreset === "all" ? "active" : ""} onClick={() => setTimePreset("all")}>
+              全部
+            </button>
             <button type="button" className={timePreset === "7" ? "active" : ""} onClick={() => setTimePreset("7")}>
               近7天
             </button>

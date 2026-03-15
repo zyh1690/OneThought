@@ -24,7 +24,7 @@ const api = {
     forceRefresh?: boolean;
     customPrompt?: string;
   }) => ipcRenderer.invoke("llm:generate", payload),
-  closeQuickCapture: () => ipcRenderer.invoke("quick-capture:close"),
+  closeQuickCapture: () => ipcRenderer.send("quick-capture:close"),
   onThoughtUpdated: (callback: () => void) => {
     const handler = () => callback();
     ipcRenderer.on("thought:updated", handler);

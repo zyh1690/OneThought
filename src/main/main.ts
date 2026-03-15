@@ -99,9 +99,8 @@ function applyHotkey(shortcut: string): boolean {
 
 function setupIpc(): void {
   ipcMain.handle("config:get", () => configService.getConfig());
-  ipcMain.handle("quick-capture:close", (e: IpcMainInvokeEvent) => {
-    const win = BrowserWindow.fromWebContents(e.sender);
-    if (win) win.hide();
+  ipcMain.on("quick-capture:close", () => {
+    if (quickWindow && !quickWindow.isDestroyed()) quickWindow.hide();
   });
   ipcMain.handle("config:update", (_e: IpcMainInvokeEvent, patch: Partial<AppConfig>) => {
     const next = configService.updateConfig(patch);

@@ -759,6 +759,9 @@ body {
   font-size: 24px;
   padding: 4px 8px;
   line-height: 1;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
 }
 
 .quick-capture-wrap form {
