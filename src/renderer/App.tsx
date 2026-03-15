@@ -99,19 +99,21 @@ function QuickCapture() {
             onChange={handleContentChange}
             placeholder="输入想法，输入 # 显示标签列表，方向键选择、回车确认；或输入 #标签 后空格确认，回车保存并关闭（Shift+Enter 换行）"
             onKeyDown={(e) => {
+              const hashMatch = content.match(/#([^\s#]*)$/u);
+              const prefix = hashMatch ? hashMatch[1] : "";
+              const prefixLower = prefix.toLowerCase();
+              let suggestions: string[] = hashMatch
+                ? (prefixLower
+                    ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+                    : allTags.slice(0, 10))
+                : allTags.slice(0, 15);
+              if (hashMatch && prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
               if (e.key === "Enter" && !e.shiftKey) {
-                const hashMatch = content.match(/#([^\s#]*)$/u);
-                const prefix = hashMatch ? hashMatch[1] : "";
-                const prefixLower = prefix.toLowerCase();
-                let suggestions: string[] = prefixLower
-                  ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
-                  : allTags.slice(0, 10);
-                if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
                 if (hashMatch && suggestions.length > 0 && suggestions[tagSuggestionIndex]) {
                   e.preventDefault();
                   const t = suggestions[tagSuggestionIndex];
                   const before = content.replace(/#[^\s#]*$/u, "");
-                  setContent(before + "#" + t + " ");
+                  setContent((before === "" ? before : before + " ") + "#" + t + " ");
                   setTagSuggestionIndex(0);
                   return;
                 }
@@ -120,13 +122,6 @@ function QuickCapture() {
                 return;
               }
               if (e.nativeEvent.isComposing) return;
-              const hashMatch = content.match(/#([^\s#]*)$/u);
-              const prefix = hashMatch ? hashMatch[1] : "";
-              const prefixLower = prefix.toLowerCase();
-              let suggestions: string[] = prefixLower
-                ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
-                : allTags.slice(0, 10);
-              if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
               if (suggestions.length === 0) return;
               if (e.key === "ArrowDown") {
                 e.preventDefault();
@@ -150,11 +145,13 @@ function QuickCapture() {
             const hashMatch = content.match(/#([^\s#]*)$/u);
             const prefix = hashMatch ? hashMatch[1] : "";
             const prefixLower = prefix.toLowerCase();
-            let suggestions: string[] = prefixLower
-              ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
-              : allTags.slice(0, 10);
-            if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
-            if (!hashMatch || suggestions.length === 0) return null;
+            let suggestions: string[] = hashMatch
+              ? (prefixLower
+                  ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+                  : allTags.slice(0, 10))
+              : allTags.slice(0, 15);
+            if (hashMatch && prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
+            if (suggestions.length === 0) return null;
             const idx = Math.min(tagSuggestionIndex, suggestions.length - 1);
             return (
               <div className="tag-suggestions" role="listbox">
@@ -163,12 +160,11 @@ function QuickCapture() {
                     key={t}
                     type="button"
                     role="option"
-                    aria-selected={i === idx}
-                    className={`tag-suggestion-chip ${i === idx ? "selected" : ""}`}
+                    className="tag-suggestion-chip"
                     data-color={tagColorIndex(t, allTags)}
                     onClick={() => {
-                      const before = content.replace(/#[^\s#]*$/u, "");
-                      setContent(before + "#" + t + " ");
+                      const before = hashMatch ? content.replace(/#[^\s#]*$/u, "") : content;
+                      setContent((before === "" ? before : before + " ") + "#" + t + " ");
                       setTagSuggestionIndex(0);
                     }}
                   >
@@ -353,6 +349,9 @@ function MainApp() {
             className={`nav-btn ${page === "home" ? "active" : ""}`}
             onClick={() => setPage("home")}
           >
+            <span className="nav-btn-icon" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
             Home
           </button>
           <button
@@ -360,6 +359,9 @@ function MainApp() {
             className={`nav-btn ${page === "archive" ? "active" : ""}`}
             onClick={() => setPage("archive")}
           >
+            <span className="nav-btn-icon" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            </span>
             Archive
           </button>
         </nav>
@@ -368,9 +370,10 @@ function MainApp() {
             <button
               key={tag}
               type="button"
-              className="tag-chip"
+              className={`tag-chip ${selectedTag === tag ? "selected" : ""}`}
               data-color={tagColorIndex(tag, allTags)}
               onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              title={selectedTag === tag ? "点击取消筛选" : `按 #${tag} 筛选`}
             >
               #{tag}
             </button>
@@ -399,10 +402,12 @@ function MainApp() {
                     const hashMatch = newThought.match(/#([^\s#]*)$/u);
                     const prefix = hashMatch ? hashMatch[1] : "";
                     const prefixLower = prefix.toLowerCase();
-                    let suggestions: string[] = prefixLower
-                      ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
-                      : allTags.slice(0, 10);
-                    if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
+                    let suggestions: string[] = hashMatch
+                      ? (prefixLower
+                          ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+                          : allTags.slice(0, 10))
+                      : allTags.slice(0, 15);
+                    if (hashMatch && prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
                     if (suggestions.length === 0) return;
                     if (e.key === "ArrowDown") {
                       e.preventDefault();
@@ -418,7 +423,7 @@ function MainApp() {
                       e.preventDefault();
                       const t = suggestions[tagSuggestionIndex];
                       const before = newThought.replace(/#[^\s#]*$/u, "");
-                      setNewThought(before + "#" + t + " ");
+                      setNewThought((before === "" ? before : before + " ") + "#" + t + " ");
                       setTagSuggestionIndex(0);
                     }
                     if (e.key === " " && hashMatch && prefix) {
@@ -433,11 +438,13 @@ function MainApp() {
                   const hashMatch = newThought.match(/#([^\s#]*)$/u);
                   const prefix = hashMatch ? hashMatch[1] : "";
                   const prefixLower = prefix.toLowerCase();
-                  let suggestions: string[] = prefixLower
-                    ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
-                    : allTags.slice(0, 10);
-                  if (prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
-                  if (!hashMatch || suggestions.length === 0) return null;
+                  let suggestions: string[] = hashMatch
+                    ? (prefixLower
+                        ? allTags.filter((t) => t.toLowerCase().startsWith(prefixLower))
+                        : allTags.slice(0, 10))
+                    : allTags.slice(0, 15);
+                  if (hashMatch && prefix && !suggestions.includes(prefix)) suggestions = [prefix, ...suggestions];
+                  if (suggestions.length === 0) return null;
                   const idx = Math.min(tagSuggestionIndex, suggestions.length - 1);
                   return (
                     <div className="tag-suggestions" role="listbox">
@@ -446,12 +453,11 @@ function MainApp() {
                           key={t}
                           type="button"
                           role="option"
-                          aria-selected={i === idx}
-                          className={`tag-suggestion-chip ${i === idx ? "selected" : ""}`}
+                          className="tag-suggestion-chip"
                           data-color={tagColorIndex(t, allTags)}
                           onClick={() => {
-                            const before = newThought.replace(/#[^\s#]*$/u, "");
-                            setNewThought(before + "#" + t + " ");
+                            const before = hashMatch ? newThought.replace(/#[^\s#]*$/u, "") : newThought;
+                            setNewThought((before === "" ? before : before + " ") + "#" + t + " ");
                             setTagSuggestionIndex(0);
                           }}
                         >

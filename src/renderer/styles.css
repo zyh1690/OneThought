@@ -91,6 +91,18 @@ body {
   margin-bottom: 4px;
 }
 
+.left-sidebar .nav-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.left-sidebar .nav-btn-icon svg {
+  display: block;
+}
+
 .left-sidebar .nav-btn:hover {
   background: var(--border);
 }
@@ -123,6 +135,15 @@ body {
 .tag-cloud .tag-chip[data-color="2"] { background: var(--tag-3); }
 .tag-cloud .tag-chip[data-color="3"] { background: var(--tag-4); }
 .tag-cloud .tag-chip[data-color="4"] { background: var(--tag-5); }
+
+.tag-cloud .tag-chip.selected {
+  box-shadow: 0 0 0 1px var(--bg-elevated) inset, 0 0 0 2px var(--accent);
+  font-weight: 600;
+}
+
+.tag-cloud .tag-chip:hover {
+  filter: brightness(1.08);
+}
 
 .settings-gear {
   padding: 12px;
@@ -276,10 +297,6 @@ body {
 .tag-suggestion-chip[data-color="3"] { background: var(--tag-4); }
 .tag-suggestion-chip[data-color="4"] { background: var(--tag-5); }
 
-.tag-suggestion-chip.selected {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 
 .thought-card {
   background: var(--bg-elevated);
