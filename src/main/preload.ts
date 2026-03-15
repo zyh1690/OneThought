@@ -12,6 +12,7 @@ const api = {
   listAllThoughts: () => ipcRenderer.invoke("thought:listAll"),
   compactThoughts: () => ipcRenderer.invoke("thought:compact"),
   deleteThought: (id: string) => ipcRenderer.invoke("thought:delete", id),
+  removeTag: (tagName: string) => ipcRenderer.invoke("tag:remove", tagName),
   createBackup: (reason?: string) => ipcRenderer.invoke("backup:create", reason),
   listBackups: () => ipcRenderer.invoke("backup:list"),
   restoreBackup: (filename: string) => ipcRenderer.invoke("backup:restore", filename),

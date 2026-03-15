@@ -142,6 +142,19 @@ function setupIpc(): void {
     return ok;
   });
 
+  ipcMain.handle("tag:remove", (_e: IpcMainInvokeEvent, tagName: string) => {
+    const all = repository.getAll();
+    let updated = false;
+    for (const t of all) {
+      if (t.tags.includes(tagName)) {
+        repository.update(t.id, { tags: t.tags.filter((tag) => tag !== tagName) });
+        updated = true;
+      }
+    }
+    if (updated) mainWindow?.webContents.send("thought:updated");
+    return true;
+  });
+
   ipcMain.handle("backup:create", async (_e: IpcMainInvokeEvent, reason?: string) => backupService.createBackup(reason));
   ipcMain.handle("backup:list", () => backupService.listBackups());
   ipcMain.handle("backup:restore", async (_e: IpcMainInvokeEvent, filename: string) => {

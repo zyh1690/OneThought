@@ -219,6 +219,18 @@ function MainApp() {
     return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   }, [allThoughtsForTags]);
 
+  const tagCount = useMemo(() => {
+    const count: Record<string, number> = {};
+    allThoughtsForTags
+      .filter((t) => !t.archived)
+      .forEach((t) => {
+        t.tags.forEach((tag) => {
+          count[tag] = (count[tag] ?? 0) + 1;
+        });
+      });
+    return count;
+  }, [allThoughtsForTags]);
+
   const timeRange = useMemo(() => {
     const now = new Date();
     if (timePreset === "all") {
@@ -366,18 +378,41 @@ function MainApp() {
           </button>
         </nav>
         <div className="tag-cloud">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className={`tag-chip ${selectedTag === tag ? "selected" : ""}`}
-              data-color={tagColorIndex(tag, allTags)}
-              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-              title={selectedTag === tag ? "点击取消筛选" : `按 #${tag} 筛选`}
-            >
-              #{tag}
-            </button>
-          ))}
+          {allTags.map((tag) => {
+            const count = tagCount[tag] ?? 0;
+            const showDelete = count === 0;
+            return (
+              <span key={tag} className="tag-chip-wrap">
+                <button
+                  type="button"
+                  className={`tag-chip ${selectedTag === tag ? "selected" : ""}`}
+                  data-color={tagColorIndex(tag, allTags)}
+                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                  title={selectedTag === tag ? "点击取消筛选" : `按 #${tag} 筛选`}
+                >
+                  #{tag}({count})
+                </button>
+                {showDelete && hasElectronApi() && (
+                  <button
+                    type="button"
+                    className="tag-chip-delete"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (window.oneThought.removeTag) {
+                        await window.oneThought.removeTag(tag);
+                        await reload();
+                      }
+                    }}
+                    title="删除该标签"
+                    aria-label="删除该标签"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                )}
+              </span>
+            );
+          })}
         </div>
         <div className="settings-gear">
           <button type="button" className="settings-gear-btn" onClick={() => setSettingsOpen(true)}>

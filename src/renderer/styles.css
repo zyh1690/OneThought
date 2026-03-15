@@ -145,6 +145,47 @@ body {
   filter: brightness(1.08);
 }
 
+.tag-cloud .tag-chip-wrap {
+  position: relative;
+  display: inline-block;
+  margin: 4px 4px 4px 0;
+  vertical-align: middle;
+}
+
+.tag-cloud .tag-chip-wrap .tag-chip {
+  margin: 0;
+}
+
+.tag-cloud .tag-chip-delete {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(128, 128, 128, 0.5);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+.tag-cloud .tag-chip-wrap:hover .tag-chip-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tag-cloud .tag-chip-delete:hover {
+  background: rgba(128, 128, 128, 0.75);
+}
+
 .settings-gear {
   padding: 12px;
   border-top: 1px solid var(--border);
