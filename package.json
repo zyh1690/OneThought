@@ -1,6 +1,6 @@
 {
   "name": "one_thought",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Windows quick idea capture tool with timeline and LLM summary",
   "main": "dist/main/main.js",
   "scripts": {

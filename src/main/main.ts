@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, type IpcMainInvokeEvent } from "electron";
+import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, screen, type IpcMainInvokeEvent } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import { ConfigService } from "./services/configService";
@@ -107,6 +107,13 @@ function setupIpc(): void {
   ipcMain.handle("config:get", () => configService.getConfig());
   ipcMain.on("quick-capture:close", () => {
     if (quickWindow && !quickWindow.isDestroyed()) quickWindow.hide();
+  });
+  ipcMain.on("quick-capture:set-height", (_e, height: number) => {
+    if (!quickWindow || quickWindow.isDestroyed()) return;
+    const [width] = quickWindow.getSize();
+    const maxH = Math.floor(screen.getPrimaryDisplay().workAreaSize.height * 0.85);
+    const h = Math.min(maxH, Math.max(260, Math.ceil(height)));
+    quickWindow.setSize(width, h);
   });
   ipcMain.handle("config:update", (_e: IpcMainInvokeEvent, patch: Partial<AppConfig>) => {
     const next = configService.updateConfig(patch);

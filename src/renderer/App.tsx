@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import type { AppConfig, GroupedThoughts, Thought } from "../main/types";
 import { extractTagsFromContent, clampText } from "./utils/tags";
@@ -36,6 +36,7 @@ function QuickCapture() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success">("idle");
   const [tagSuggestionIndex, setTagSuggestionIndex] = useState(0);
   const [allThoughtsForTags, setAllThoughtsForTags] = useState<Thought[]>([]);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const tags = useMemo(() => extractTagsFromContent(content), [content]);
   const allTags = useMemo(() => {
@@ -43,6 +44,25 @@ function QuickCapture() {
     allThoughtsForTags.forEach((t) => t.tags.forEach((tag) => set.add(tag)));
     return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   }, [allThoughtsForTags]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-quick-capture", "true");
+    return () => document.documentElement.removeAttribute("data-quick-capture");
+  }, []);
+
+  useEffect(() => {
+    if (!hasElectronApi() || typeof window.oneThought.setQuickCaptureHeight !== "function") return;
+    const reportHeight = () => {
+      const h = document.documentElement.scrollHeight;
+      window.oneThought.setQuickCaptureHeight(h);
+    };
+    const el = wrapRef.current;
+    if (!el) return;
+    reportHeight();
+    const ro = new ResizeObserver(() => reportHeight());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [allThoughtsForTags.length, content]);
 
   useEffect(() => {
     if (hasElectronApi()) void window.oneThought.listAllThoughts().then(setAllThoughtsForTags);
@@ -83,7 +103,7 @@ function QuickCapture() {
   };
 
   return (
-    <div className="quick-capture-wrap">
+    <div ref={wrapRef} className="quick-capture-wrap">
       <div className="quick-capture-header">
         <h2>OneThought</h2>
         <button type="button" className="modal-close quick-capture-close" onClick={(e) => closeWithoutSave(e)} title="关闭">

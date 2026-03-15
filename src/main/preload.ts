@@ -26,6 +26,7 @@ const api = {
     customPrompt?: string;
   }) => ipcRenderer.invoke("llm:generate", payload),
   closeQuickCapture: () => ipcRenderer.send("quick-capture:close"),
+  setQuickCaptureHeight: (height: number) => ipcRenderer.send("quick-capture:set-height", height),
   onThoughtUpdated: (callback: () => void) => {
     const handler = () => callback();
     ipcRenderer.on("thought:updated", handler);
