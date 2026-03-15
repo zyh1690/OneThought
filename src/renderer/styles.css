@@ -170,8 +170,16 @@ body {
 }
 
 .gear-icon {
-  font-size: 20px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gear-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 
 /* 中间主区域：上输入下列表，仅列表滚动 */
@@ -646,6 +654,58 @@ body {
   flex: 1;
   min-width: 0;
   margin-top: 0;
+}
+
+.settings-modal .modal-body .settings-hotkey-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-modal .modal-body .settings-hotkey-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ebebeb;
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.settings-modal .modal-body .settings-hotkey-input:hover {
+  border-color: var(--accent);
+}
+
+.settings-modal .modal-body .settings-hotkey-input[data-recording="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.settings-modal .modal-body .settings-hotkey-clear {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #ebebeb;
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-modal .modal-body .settings-hotkey-clear:hover {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .settings-modal .modal-body label.settings-checkbox {
