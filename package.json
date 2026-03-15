@@ -13,7 +13,7 @@
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.main.json",
     "build:icon": "node scripts/build-icon.mjs",
-    "dist": "npm run build:icon && npm run build && electron-builder --win",
+    "dist": "npm run build:icon && npm run build && electron-builder --win --publish never",
     "dist:portable": "npm run build && electron-builder --win portable",
     "test:perf:100k": "node scripts/benchmark-100k.js",
     "test:stability:72h": "node scripts/stability-72h.js",
