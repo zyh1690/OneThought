@@ -69,8 +69,14 @@ function toggleQuickWindow(): void {
 }
 
 function setupTray(): void {
-  const iconPath = path.join(process.cwd(), "build/icon.ico");
-  const icon = fs.existsSync(iconPath) ? iconPath : nativeImage.createEmpty();
+  const buildDir = path.join(process.cwd(), "build");
+  const icoPath = path.join(buildDir, "icon.ico");
+  const pngPath = path.join(buildDir, "icon.png");
+  const icon = fs.existsSync(icoPath)
+    ? nativeImage.createFromPath(icoPath)
+    : fs.existsSync(pngPath)
+      ? nativeImage.createFromPath(pngPath)
+      : nativeImage.createEmpty();
   tray = new Tray(icon);
   const menu = Menu.buildFromTemplate([
     { label: "快速记录", click: () => toggleQuickWindow() },
