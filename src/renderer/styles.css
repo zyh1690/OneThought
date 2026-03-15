@@ -567,6 +567,62 @@ body {
   cursor: not-allowed;
 }
 
+.right-bar .ai-summary .result-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-bar .ai-summary .result-box {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.right-bar .ai-summary .result-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.right-bar .ai-summary .result-copy-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.right-bar .ai-summary .result-copy-tip {
+  position: absolute;
+  top: 6px;
+  right: 36px;
+  z-index: 2;
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--bg-elevated);
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  white-space: nowrap;
+}
+
 .right-bar .ai-summary .result {
   flex: 1;
   overflow-y: auto;
@@ -574,9 +630,11 @@ body {
   line-height: 1.5;
   white-space: pre-wrap;
   padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
+  padding-top: 34px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 /* 归档页：瀑布流 */

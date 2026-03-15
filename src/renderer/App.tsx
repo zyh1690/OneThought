@@ -117,7 +117,7 @@ function QuickCapture() {
             autoFocus
             value={content}
             onChange={handleContentChange}
-            placeholder="输入想法，输入 # 显示标签列表，方向键选择、回车确认；或输入 #标签 后空格确认，回车保存并关闭（Shift+Enter 换行）"
+            placeholder="输入想法，# 添加标签，Enter 保存并关闭，Shift+Enter 换行"
             onKeyDown={(e) => {
               const hashMatch = content.match(/#([^\s#]*)$/u);
               const prefix = hashMatch ? hashMatch[1] : "";
@@ -223,6 +223,7 @@ function MainApp() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiResult, setAiResult] = useState("");
   const [loadingLlm, setLoadingLlm] = useState(false);
+  const [copyTip, setCopyTip] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [detailThought, setDetailThought] = useState<Thought | null>(null);
   const [detailEditContent, setDetailEditContent] = useState("");
@@ -453,7 +454,7 @@ function MainApp() {
                   className="input-area"
                   value={newThought}
                   onChange={(e) => setNewThought(e.target.value)}
-                  placeholder="输入想法，输入 # 显示标签列表，方向键选择、回车确认；或输入 #标签 后空格确认"
+                  placeholder="输入想法， # 添加标签"
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing) return;
                     const hashMatch = newThought.match(/#([^\s#]*)$/u);
@@ -644,7 +645,31 @@ function MainApp() {
           <button type="button" className="generate-btn" disabled={loadingLlm} onClick={generateSummary}>
             生成总结
           </button>
-          <pre className="result">{aiResult || "暂无总结"}</pre>
+          <div className="result-wrap">
+            <div className="result-box">
+              <button
+                type="button"
+                className="result-copy-btn"
+                onClick={async () => {
+                  const text = aiResult || "暂无总结";
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    setCopyTip("复制成功");
+                    setTimeout(() => setCopyTip(""), 2000);
+                  } catch {
+                    setCopyTip("复制失败");
+                    setTimeout(() => setCopyTip(""), 2000);
+                  }
+                }}
+                title="复制"
+                aria-label="复制总结内容"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              {copyTip && <span className="result-copy-tip">{copyTip}</span>}
+              <pre className="result">{aiResult || "暂无总结"}</pre>
+            </div>
+          </div>
         </div>
       </aside>
 

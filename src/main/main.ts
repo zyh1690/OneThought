@@ -15,6 +15,7 @@ const llmService = new LlmService();
 let mainWindow: BrowserWindow | null = null;
 let quickWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let isQuitting = false;
 
 function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -32,6 +33,13 @@ function createMainWindow(): BrowserWindow {
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) win.loadURL(devUrl);
   else win.loadFile(path.join(__dirname, "../renderer/index.html"));
+  // 点击关闭按钮时隐藏到托盘，不销毁窗口；只有从托盘选「退出」才真正退出
+  win.on("close", (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      win.hide();
+    }
+  });
   return win;
 }
 
@@ -69,20 +77,28 @@ function toggleQuickWindow(): void {
 }
 
 function setupTray(): void {
-  const buildDir = path.join(process.cwd(), "build");
+  // 使用 app.getAppPath() 以便开发与打包后都能正确找到图标（打包后 process.cwd() 可能不是应用目录）
+  const buildDir = path.join(app.getAppPath(), "build");
   const icoPath = path.join(buildDir, "icon.ico");
   const pngPath = path.join(buildDir, "icon.png");
-  const icon = fs.existsSync(icoPath)
-    ? nativeImage.createFromPath(icoPath)
-    : fs.existsSync(pngPath)
-      ? nativeImage.createFromPath(pngPath)
-      : nativeImage.createEmpty();
+  let icon = nativeImage.createEmpty();
+  if (fs.existsSync(icoPath)) {
+    icon = nativeImage.createFromPath(icoPath);
+  } else if (fs.existsSync(pngPath)) {
+    icon = nativeImage.createFromPath(pngPath);
+  }
+  if (icon.isEmpty()) {
+    // 无图标时使用 16x16 单色占位图，避免托盘显示空白
+    icon = nativeImage.createFromDataURL(
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVQ4T2NkYGD4z0ABYBzVMKphoBvAwPD/PwMDA8N/RkZGBvj4////DP8ZGBj+MzD8Z2D4z8DA8J+BgeE/AwPDfwYGhv8MDAz/GRgY/jMwMPxnYGD4z8DA8J+BgeE/AwPDfwYGhv8MDAz/GQAZcQ0M/y0+ggAAAABJRU5ErkJggg=="
+    );
+  }
   tray = new Tray(icon);
   const menu = Menu.buildFromTemplate([
     { label: "快速记录", click: () => toggleQuickWindow() },
     { label: "打开主界面", click: () => mainWindow?.show() },
     { type: "separator" },
-    { label: "退出", click: () => app.quit() }
+    { label: "退出", click: () => { isQuitting = true; app.quit(); } }
   ]);
   tray.setToolTip("OneThought");
   tray.setContextMenu(menu);

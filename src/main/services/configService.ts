@@ -3,7 +3,7 @@ import { resolveAppPaths } from "./paths";
 import type { AppConfig } from "../types";
 
 const defaultConfig: AppConfig = {
-  hotkey: "Super+T",
+  hotkey: "Control+T",
   autoLaunch: false,
   llmEnabled: false,
   theme: "light",

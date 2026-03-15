@@ -53,7 +53,9 @@
     },
     "files": [
       "dist/**/*",
-      "package.json"
+      "package.json",
+      "build/icon.ico",
+      "build/icon.png"
     ],
     "extraMetadata": {
       "main": "dist/main/main.js"
