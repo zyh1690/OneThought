@@ -11,17 +11,20 @@ const api = {
   listThoughts: (options: QueryOptions) => ipcRenderer.invoke("thought:list", options),
   listAllThoughts: () => ipcRenderer.invoke("thought:listAll"),
   compactThoughts: () => ipcRenderer.invoke("thought:compact"),
+  deleteThought: (id: string) => ipcRenderer.invoke("thought:delete", id),
   createBackup: (reason?: string) => ipcRenderer.invoke("backup:create", reason),
   listBackups: () => ipcRenderer.invoke("backup:list"),
   restoreBackup: (filename: string) => ipcRenderer.invoke("backup:restore", filename),
   generateLlm: (payload: {
     from: string;
     to: string;
-    tags: string[];
+    tags?: string[];
     archived: boolean | null;
     type: "summary" | "mindmap";
     forceRefresh?: boolean;
+    customPrompt?: string;
   }) => ipcRenderer.invoke("llm:generate", payload),
+  closeQuickCapture: () => ipcRenderer.invoke("quick-capture:close"),
   onThoughtUpdated: (callback: () => void) => {
     const handler = () => callback();
     ipcRenderer.on("thought:updated", handler);

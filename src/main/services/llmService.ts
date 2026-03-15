@@ -10,6 +10,7 @@ interface GenerateOptions {
   archived: boolean | null;
   type: "summary" | "mindmap";
   forceRefresh?: boolean;
+  customPrompt?: string;
 }
 
 interface LlmResult {
@@ -40,7 +41,7 @@ export class LlmService {
     }
 
     try {
-      const content = await this.callOpenAiCompatible(thoughts, config, options.type);
+      const content = await this.callOpenAiCompatible(thoughts, config, options.type, options.customPrompt);
       this.persistCache({
         id: crypto.randomUUID(),
         range: { from: options.from, to: options.to },
@@ -63,12 +64,14 @@ export class LlmService {
   private async callOpenAiCompatible(
     thoughts: Thought[],
     config: AppConfig,
-    type: "summary" | "mindmap"
+    type: "summary" | "mindmap",
+    customPrompt?: string
   ): Promise<string> {
     const text = thoughts.map((item) => `- [${item.created_at}] ${item.content}`).join("\n");
+    const summaryPrompt = customPrompt ?? config.aiSummaryPrompt ?? "请基于以下想法记录生成结构化总结，按主题归类并给出可执行建议。";
     const prompt =
       type === "summary"
-        ? `请基于以下想法记录生成结构化总结，按主题归类并给出可执行建议：\n${text}`
+        ? `${summaryPrompt}\n\n${text}`
         : `请把以下想法整理为思维导图的 Markdown 层级结构（仅返回 markdown 列表，不要解释）：\n${text}`;
     const body = {
       model: config.llm.model,

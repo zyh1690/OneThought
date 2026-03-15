@@ -47,6 +47,8 @@ export interface AppConfig {
   hotkey: string;
   autoLaunch: boolean;
   llmEnabled: boolean;
+  theme: "light" | "dark";
+  aiSummaryPrompt: string;
   llm: {
     baseUrl: string;
     apiKey: string;

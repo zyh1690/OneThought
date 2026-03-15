@@ -37,10 +37,12 @@ function createMainWindow(): BrowserWindow {
 
 function createQuickWindow(): BrowserWindow {
   const win = new BrowserWindow({
-    width: 520,
-    height: 220,
+    width: 560,
+    height: 320,
     frame: false,
-    resizable: false,
+    resizable: true,
+    minWidth: 400,
+    minHeight: 260,
     show: false,
     alwaysOnTop: true,
     skipTaskbar: true,
@@ -97,6 +99,10 @@ function applyHotkey(shortcut: string): boolean {
 
 function setupIpc(): void {
   ipcMain.handle("config:get", () => configService.getConfig());
+  ipcMain.handle("quick-capture:close", (e: IpcMainInvokeEvent) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (win) win.hide();
+  });
   ipcMain.handle("config:update", (_e: IpcMainInvokeEvent, patch: Partial<AppConfig>) => {
     const next = configService.updateConfig(patch);
     if (Object.hasOwn(patch, "autoLaunch")) applyAutoLaunch(Boolean(next.autoLaunch));
@@ -125,6 +131,11 @@ function setupIpc(): void {
   ipcMain.handle("thought:list", (_e: IpcMainInvokeEvent, options: QueryOptions) => repository.queryGrouped(options));
   ipcMain.handle("thought:listAll", () => repository.getAll());
   ipcMain.handle("thought:compact", () => repository.compact());
+  ipcMain.handle("thought:delete", (_e: IpcMainInvokeEvent, id: string) => {
+    const ok = repository.delete(id);
+    if (ok) mainWindow?.webContents.send("thought:updated");
+    return ok;
+  });
 
   ipcMain.handle("backup:create", async (_e: IpcMainInvokeEvent, reason?: string) => backupService.createBackup(reason));
   ipcMain.handle("backup:list", () => backupService.listBackups());
@@ -135,7 +146,7 @@ function setupIpc(): void {
     return true;
   });
 
-  ipcMain.handle("llm:generate", async (_e: IpcMainInvokeEvent, payload: { from: string; to: string; tags?: string[]; archived?: boolean | null; type: "summary" | "mindmap"; forceRefresh?: boolean }) => {
+  ipcMain.handle("llm:generate", async (_e: IpcMainInvokeEvent, payload: { from: string; to: string; tags?: string[]; archived?: boolean | null; type: "summary" | "mindmap"; forceRefresh?: boolean; customPrompt?: string }) => {
     const all = repository.getAll();
     const from = payload.from;
     const to = payload.to;
@@ -154,7 +165,8 @@ function setupIpc(): void {
       tags,
       archived,
       type: payload.type,
-      forceRefresh: Boolean(payload.forceRefresh)
+      forceRefresh: Boolean(payload.forceRefresh),
+      customPrompt: payload.customPrompt
     });
   });
 }

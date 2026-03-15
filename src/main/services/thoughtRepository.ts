@@ -73,6 +73,13 @@ export class ThoughtRepository {
     return this.update(id, { archived });
   }
 
+  delete(id: string): boolean {
+    if (!this.thoughtsById.has(id)) return false;
+    this.thoughtsById.delete(id);
+    this.compact();
+    return true;
+  }
+
   queryGrouped(options: QueryOptions): GroupedThoughts[] {
     const fromTs = options.from ? +new Date(options.from) : Number.MIN_SAFE_INTEGER;
     const toTs = options.to ? +new Date(options.to) : Number.MAX_SAFE_INTEGER;

@@ -6,10 +6,12 @@ const defaultConfig: AppConfig = {
   hotkey: "Super+T",
   autoLaunch: false,
   llmEnabled: false,
+  theme: "light",
+  aiSummaryPrompt: "请基于以下想法记录生成结构化总结，按主题归类并给出可执行建议。",
   llm: {
-    baseUrl: "https://api.openai.com/v1",
+    baseUrl: "",
     apiKey: "",
-    model: "gpt-4o-mini",
+    model: "",
     timeoutMs: 30000,
     maxTokens: 1200
   },
